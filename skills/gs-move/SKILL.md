@@ -7,7 +7,15 @@ You are implementing `/gs-move`. This reorders a branch within the stack, or det
 
 ## Steps
 
-### 1. Discover the stack
+### 1. Check working tree
+
+```
+git status --porcelain
+```
+
+If the output shows any changes (staged, unstaged, or untracked) or merge conflicts, stop and tell the user to commit, stash, or resolve conflicts before reordering the stack.
+
+### 2. Discover the stack
 
 **Follow the [stack discovery](../../docs/stack-discovery.md) pattern** (git config only, no fallback). Build the ordered branch list from root to tip.
 
@@ -16,7 +24,7 @@ Get the current branch:
 git rev-parse --abbrev-ref HEAD
 ```
 
-### 2. Show the stack graph
+### 3. Show the stack graph
 
 Display the full stack with the current branch marked. Example:
 
@@ -28,7 +36,7 @@ Stack:
   └─ stack/03-feature-c
 ```
 
-### 3. Ask what action to take
+### 4. Ask what action to take
 
 Present the following options:
 
@@ -63,7 +71,7 @@ git config git-stack.C.parent A
 ```
 
 Rebase order (use `--onto` to transplant each branch from its old parent to its new parent):
-1. `git rebase --onto B above-parent A` (transplant A from its old parent to B)
+1. `git rebase --onto B main A` (transplant A from main to B)
 2. `git rebase --onto A B C` (transplant C from B to A)
 
 Return to `B` when done.
@@ -197,14 +205,6 @@ Report any failures. Do not declare the move complete until the user has acknowl
 
 **Follow the [conflict handling](../../docs/conflict-handling.md) pattern.** Pause on genuine conflicts — list conflicted files, show the user, wait for resolution.
 
-## Edge Cases
-
-- **Stack has only one branch:** Moving up or down is not possible. Detach is allowed. Report appropriately.
-- **Current branch is closest to main (parent = main):** "Move up" is a no-op. Report and stop.
-- **Current branch is farthest from main (no child):** "Move down" is a no-op. Report and stop.
-- **Detaching the only branch in the stack:** Unset metadata and rebase onto main. The stack becomes empty.
-- **Dirty working tree:** If `git status` shows uncommitted changes or unresolved conflicts before starting, stop and tell the user to clean up first.
-
 ## Rules
 
 - Do NOT push any branch.
@@ -213,3 +213,11 @@ Report any failures. Do not declare the move complete until the user has acknowl
 - Do NOT add `🤖 Generated with Claude Code` lines.
 - `gh` is not required — this is entirely local.
 - Always confirm the chosen action with the user before making any changes.
+
+## Edge Cases
+
+- **Stack has only one branch:** Moving up or down is not possible. Detach is allowed. Report appropriately.
+- **Current branch is closest to main (parent = main):** "Move up" is a no-op. Report and stop.
+- **Current branch is farthest from main (no child):** "Move down" is a no-op. Report and stop.
+- **Detaching the only branch in the stack:** Unset metadata and rebase onto main. The stack becomes empty.
+- **Dirty working tree:** If `git status` shows uncommitted changes or unresolved conflicts before starting, stop and tell the user to clean up first.

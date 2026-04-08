@@ -179,12 +179,18 @@ For each branch:
    ```
    Skip pushing branches that have never been published — those should go through `/gs-submit` for PR title/description approval.
 
-### 7. Report summary
+### 7. Verify
+
+After all rebases complete, run the project's verification commands as defined in `CLAUDE.md` (e.g., `pnpm typecheck`, `pnpm lint`) on the remaining branches. If no verification commands are found, skip this step.
+
+If verification fails, report the failure output but continue to the summary — the merge and retarget have already been completed.
+
+### 8. Report summary
 
 After all cycles complete (or after stopping on a failure), show a summary table:
 
 ```
-## st-merge summary
+## gs-merge summary
 
 | PR | Branch | Status |
 |----|--------|--------|

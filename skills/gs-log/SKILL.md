@@ -23,7 +23,7 @@ git rev-parse --abbrev-ref HEAD
 
 ### 3. Gather Info Per Branch
 
-For each branch in the stack (top-to-bottom order):
+For each branch in the stack (from the branch farthest from `main` to the one closest):
 
 **Commit count vs parent:**
 ```bash
@@ -101,15 +101,15 @@ Format rules:
 
 Once displayed, the skill is done. No further action, no questions asked.
 
+## Rules
+
+- Read-only — never modify branches, config, or PRs
+- Never ask questions — display and done
+- Gracefully degrade when `gh` is unavailable rather than erroring
+
 ## Edge Cases
 
 - **Branch in git config no longer exists locally:** Skip it and show `(branch deleted)` in the graph.
 - **PR was closed or merged:** Show `(PR #N closed)` or `(PR #N merged)` instead of the status indicator.
 - **`gh` CLI not available:** Show the stack graph with branch names and commit counts only — skip PR status, show `(gh unavailable)` once at the top.
 - **Current branch is not in the stack:** Show the full stack graph but without the `●` marker. Add a note: "Current branch is not part of this stack."
-
-## Rules
-
-- Read-only — never modify branches, config, or PRs
-- Never ask questions — display and done
-- Gracefully degrade when `gh` is unavailable rather than erroring
