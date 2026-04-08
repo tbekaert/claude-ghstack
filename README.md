@@ -78,18 +78,17 @@ claude-ghstack provides eight slash commands that handle the entire stacked PR l
 
 ### Typical workflow
 
-```mermaid
-%%{init: {'theme': 'neutral'}}%%
-graph LR
-    A["1. Build\n/gs-create → code → /gs-create → code"] --> B["2. Publish\n/gs-submit"]
-    B --> C["3. Iterate\nreview feedback → /gs-sync → /gs-submit"]
-    C --> D["4. Land\n/gs-merge"]
-    D -.->|"next feature"| A
-
-    style A fill:#e8f5e9,stroke:#4caf50
-    style B fill:#e3f2fd,stroke:#2196f3
-    style C fill:#fff3e0,stroke:#ff9800
-    style D fill:#fce4ec,stroke:#e91e63
+```
+┌───────────────────────────────┐     ┌──────────────┐
+│ 1. Build                      │────▶│ 2. Publish   │
+│ /gs-create → code → repeat    │     │ /gs-submit   │
+└───────────────────────────────┘     └──────┬───────┘
+        ▲                                    │
+        │                                    ▼
+┌───────┴───────┐     ┌─────────────────────────────┐
+│ 4. Land       │◀────│ 3. Iterate                   │
+│ /gs-merge     │     │ review feedback → /gs-sync    │
+└───────────────┘     └─────────────────────────────┘
 ```
 
 ### Example session
@@ -147,17 +146,14 @@ graph LR
 
 Stack metadata is stored in `.git/config` under `git-stack.*` keys — no extra files to commit or track. Each branch records its parent, forming a linked list:
 
-```mermaid
-%%{init: {'theme': 'neutral'}}%%
-graph LR
-    M["main"] -->|"git-stack.feat/auth.parent"| A["feat/auth"]
-    A -->|"git-stack.feat/api.parent"| B["feat/api"]
-    B -->|"git-stack.feat/ui.parent"| C["feat/ui"]
+```
+git-stack.feat/auth.parent = main
+git-stack.feat/api.parent  = feat/auth
+git-stack.feat/ui.parent   = feat/api
 
-    style M fill:#f5f5f5,stroke:#999
-    style A fill:#e3f2fd,stroke:#2196f3
-    style B fill:#e3f2fd,stroke:#2196f3
-    style C fill:#e3f2fd,stroke:#2196f3
+main ──▶ feat/auth ──▶ feat/api ──▶ feat/ui
+           parent:       parent:      parent:
+           main          feat/auth    feat/api
 ```
 
 Each command reads the stack state by following these parent pointers, performs its operation, and updates the config. The chain is walked bottom-up (closest to `main` first) for rebasing and submitting, ensuring each branch is always based on the correct parent.
@@ -174,22 +170,19 @@ Each command reads the stack state by following these parent pointers, performs 
 
 Large features are hard to review as a single pull request. A 2,000-line diff often gets rubber-stamped or endlessly delayed. Stacked PRs solve this by splitting work into a chain of small, focused PRs that build on each other:
 
-```mermaid
-%%{init: {'theme': 'neutral'}}%%
-graph LR
-    subgraph traditional ["Traditional: one big PR"]
-        direction LR
-        M1[main] -->|"PR #1 — 2,000 lines<br/>auth + API + UI + tests"| F1[feature]
-    end
+```
+Traditional — one big PR:
 
-    subgraph stacked ["Stacked: three small PRs"]
-        direction LR
-        M2[main] -->|"PR #1 — 400 lines"| A[feat/auth]
-        A -->|"PR #2 — 500 lines"| B[feat/api]
-        B -->|"PR #3 — 300 lines"| C[feat/ui]
-    end
+  main ───────────────────────────────────────▶ feature
+              PR #1 (2,000 lines)
+              auth + API + UI + tests
 
-    traditional ~~~ stacked
+
+Stacked — three small PRs:
+
+  main ──▶ feat/auth ──▶ feat/api ──▶ feat/ui
+    PR #1       PR #2        PR #3
+  400 lines   500 lines    300 lines
 ```
 
 Each PR in the stack has a clear scope, is easy to review independently, and merges into the one below it (not directly into `main`). When the bottom PR merges, the next one retargets to `main` automatically.
@@ -206,17 +199,19 @@ Each PR in the stack has a clear scope, is easy to review independently, and mer
 
 Stacked PRs are powerful but painful to manage manually:
 
-```mermaid
-%%{init: {'theme': 'neutral'}}%%
-graph TD
-    A["Create branches with correct parent tracking"] --> B["When main updates, rebase EVERY branch in the right order"]
-    B --> C["Set each PR's base branch correctly on GitHub"]
-    C --> D["When you amend a commit mid-stack, rebase all downstream"]
-    D --> E["When bottom PR merges: retarget next PR, delete branch,\nrebase the rest, push everything..."]
-    E --> F["Track which PRs need updating, approved, or failing CI"]
-    F -->|"One mistake and you get duplicate commits,\nwrong diffs, or lost changes"| G["Broken stack"]
+```
+Without tooling, you have to:
 
-    style G fill:#f66,stroke:#c00,color:#fff
+  1. Create branches with correct parent tracking
+  2. When main updates, rebase EVERY branch in the right order
+  3. Set each PR's base branch correctly on GitHub
+  4. When you amend a commit mid-stack, rebase all downstream
+  5. When bottom PR merges, retarget next PR, delete branch,
+     rebase the rest, push everything...
+  6. Track which PRs need updating, approved, or failing CI
+
+  One mistake in the rebase order → duplicate commits,
+  wrong diffs, or force-push someone else's changes away.
 ```
 
 This is exactly what claude-ghstack automates.
