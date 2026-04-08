@@ -73,11 +73,30 @@ For each PR to merge, execute these steps in strict order. Complete the full cyc
 gh pr checks <number>
 ```
 
-All checks must have status `pass` or `skipping`. If any check is `fail` or `pending`, stop immediately:
+Evaluate the results:
 
-> PR #N has failing/pending CI checks: [list check names and statuses]. Aborting.
+- **All checks `pass` or `skipping`:** Continue to step 6b.
+- **Any check `fail`:** Stop immediately:
+  > PR #N has failing CI checks: [list check names and statuses]. Aborting.
+- **Any check `pending` or `in_progress` (none failing):** Ask the user:
+  > PR #N has pending CI checks: [list check names and statuses].
+  > Wait for CI to complete? (yes / no)
 
-Do not proceed to the next step.
+  **If no:** Stop immediately and report.
+
+  **If yes:** Poll `gh pr checks <number>` every 30 seconds until all checks resolve:
+
+  ```bash
+  # Repeat until no checks are pending/in_progress:
+  gh pr checks <number>
+  # Wait 30 seconds between polls
+  ```
+
+  - After each poll, if any check changed state, show a brief status update (e.g., "lint: pass, tests: still running...").
+  - Once all checks resolve:
+    - All `pass` or `skipping` → continue to step 6b.
+    - Any `fail` → stop and report, same as above.
+  - If the user interrupts during polling → stop and report the current check state.
 
 #### 6b. Check review threads
 
@@ -205,6 +224,7 @@ Merged: 2, Stopped at: PR #177, Remaining: 1
 Possible statuses per row:
 - `Merged ✓` — PR merged, branch deleted, downstream rebased
 - `CI failing ✗ (stopped)` — CI check failed; halted here
+- `CI pending ✗ (stopped)` — user chose not to wait for pending CI
 - `Unresolved reviews ✗ (stopped)` — user chose to abort on unresolved threads
 - `Not attempted` — would have been merged next but a prior stop prevented it
 
@@ -215,6 +235,7 @@ Possible statuses per row:
 - **Always** use `--force-with-lease` for all pushes, never bare `--force`
 - **Always** present the stack and get user confirmation before any merge
 - **Stop** on CI failure — do not skip and continue
+- **Ask** on pending CI — offer to wait with polling, never auto-wait
 - **Ask** on unresolved review threads — do not auto-proceed
 - **Never** auto-resolve genuine rebase conflicts — pause and wait for the user
 - Clean up `git-stack.*` config entries for every merged branch
