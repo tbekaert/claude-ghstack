@@ -70,33 +70,33 @@ For each PR to merge, execute these steps in strict order. Complete the full cyc
 #### 6a. Check CI
 
 ```bash
-gh pr checks <number>
+gh pr checks <number> --json name,state
 ```
 
-Evaluate the results:
+Evaluate the results. The `state` field returns values like `SUCCESS`, `FAILURE`, `PENDING`, `SKIPPED`, etc. (casing may vary by `gh` version — check case-insensitively). Check for failures first — a failing check takes priority over any pending checks:
 
-- **All checks `pass` or `skipping`:** Continue to step 6b.
-- **Any check `fail`:** Stop immediately:
-  > PR #N has failing CI checks: [list check names and statuses]. Aborting.
-- **Any check `pending` or `in_progress` (none failing):** Ask the user:
-  > PR #N has pending CI checks: [list check names and statuses].
+- **All checks `SUCCESS` or `SKIPPED`:** Continue to step 6b.
+- **Any check `FAILURE` or `ERROR` (regardless of other checks' states):** Stop immediately:
+  > PR #N has failing CI checks: [list check names and states]. Aborting.
+- **Any check `PENDING` or `IN_PROGRESS` (and none failing):** Ask the user:
+  > PR #N has pending CI checks: [list check names and states].
   > Wait for CI to complete? (yes / no)
 
   **If no:** Stop immediately and report.
 
-  **If yes:** Poll `gh pr checks <number>` every 30 seconds until all checks resolve:
+  **If yes:** Poll every 30 seconds until all checks resolve:
 
   ```bash
-  # Repeat until no checks are pending/in_progress:
-  gh pr checks <number>
-  # Wait 30 seconds between polls
+  sleep 30
+  gh pr checks <number> --json name,state
   ```
 
-  - After each poll, if any check changed state, show a brief status update (e.g., "lint: pass, tests: still running...").
+  - After each poll, if any check changed state since the last poll, show a brief update (e.g., "lint: SUCCESS, tests: still PENDING...").
   - Once all checks resolve:
-    - All `pass` or `skipping` → continue to step 6b.
-    - Any `fail` → stop and report, same as above.
-  - If the user interrupts during polling → stop and report the current check state.
+    - All `SUCCESS` or `SKIPPED` → continue to step 6b.
+    - Any `FAILURE` or `ERROR` → stop and report, same as above.
+  - If any checks are still `PENDING` or `IN_PROGRESS` after 10 minutes (20 polls), report the current state and ask the user whether to keep waiting or stop.
+  - If the user sends a message during polling, treat it as an interrupt — stop polling, report the current check state, and respond to the user.
 
 #### 6b. Check review threads
 
@@ -251,4 +251,6 @@ Possible statuses per row:
 - **Push rejected (lease mismatch):** Report the error, tell the user to run `/gs-sync` first, and stop. Do not retry automatically.
 - **`gh pr edit --base` fails:** Report the error and stop. Do not delete the branch until retargeting succeeds.
 - **Last PR in stack (no next PR):** Skip the retarget step (step 6d). Delete the branch normally.
+- **CI wait timeout:** After 10 minutes of polling with checks still pending, ask the user whether to keep waiting or stop. If the user stops, report `CI pending ✗ (stopped)`.
+- **No CI checks configured:** If `gh pr checks` returns an empty list, treat as all passing and continue to step 6b.
 - **No `git-stack.*` config and no open PRs:** Stop with: "No stack found. Use `/gs-create` to start one."
