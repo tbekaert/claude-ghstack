@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-claude-ghstack is a Claude Code plugin for stacked PR management. It provides eight slash-command skills (`/gs-*`) that create, reorder, publish, sync, and merge stacked branches without leaving the editor. There is no build step, no tests, and no runtime code — the repo is entirely markdown-based skill definitions.
+claude-ghstack is a Claude Code plugin for stacked PR management. It provides nine slash-command skills (`/gs-*`) that create, reorder, publish, sync, and merge stacked branches without leaving the editor. There is no build step, no tests, and no runtime code — the repo is entirely markdown-based skill definitions.
 
 ## Development
 
@@ -36,7 +36,7 @@ All stack state lives in `.git/config` under `git-stack.<branch>.parent` keys. N
 
 ### Skill Categories
 
-- **Local-only** (no `gh` needed): `gs-create`, `gs-insert`, `gs-move` — use simple stack discovery (git config only), require clean tree (no merge conflicts)
+- **Local-only** (no `gh` needed): `gs-create`, `gs-insert`, `gs-move`, `gs-nav` — use simple stack discovery (git config only). `gs-create`/`gs-insert`/`gs-move` require clean tree; `gs-nav` lets git handle checkout conflicts naturally.
 - **Network** (`gh` required): `gs-submit`, `gs-sync`, `gs-merge` — use full stack discovery with PR chain fallback, delegate to prerequisites.md
 - **Read-only**: `gs-log` (display only, no mutations), `gs-help` (static reference card)
 

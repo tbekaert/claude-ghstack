@@ -9,6 +9,7 @@ Stacked PR Skills (claude-ghstack plugin)
     /gs-create   — Create a new branch stacked on current
     /gs-insert   — Insert a branch at a chosen position in the stack
     /gs-move     — Reorder or detach a branch in the stack
+    /gs-nav      — Switch to another branch in the stack
 
   Network operations:
     /gs-submit   — Push all branches + create/update PRs

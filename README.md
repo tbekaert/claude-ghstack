@@ -63,13 +63,14 @@ Run `/gs-help` to verify the plugin is active.
 
 ## What claude-ghstack does
 
-claude-ghstack provides eight slash commands that handle the entire stacked PR lifecycle. Local commands work offline; network commands require the [GitHub CLI](https://cli.github.com/).
+claude-ghstack provides nine slash commands that handle the entire stacked PR lifecycle. Local commands work offline; network commands require the [GitHub CLI](https://cli.github.com/).
 
 | Command      | Description                                                                 |
 | ------------ | --------------------------------------------------------------------------- |
 | `/gs-create` | Create a new branch stacked on the current one, stage changes, and commit   |
 | `/gs-insert` | Insert a new branch at a chosen position in an existing stack               |
 | `/gs-move`   | Reorder a branch (move up/down/to position) or detach it from the stack     |
+| `/gs-nav`    | Switch to another branch in the stack (next, prev, by number, or pick)      |
 | `/gs-submit` | Push all branches and create/update PRs on GitHub with proper base branches |
 | `/gs-sync`   | Rebase the entire stack after upstream changes, optionally push             |
 | `/gs-merge`  | Merge approved PRs into `main` with automatic retarget, cleanup, and rebase |
