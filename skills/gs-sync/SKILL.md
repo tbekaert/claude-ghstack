@@ -15,7 +15,7 @@ Display the full stack so the user can see what will be rebased:
 
 ```
 Stack to sync:
-  main
+  <root-branch>
   └─ stack/01-feature-a
   └─ stack/02-feature-b
   └─ stack/03-feature-c
@@ -31,7 +31,7 @@ This ensures the rebase is based on the latest remote state.
 
 ### 3. Rebase the chain
 
-Iterate through the stack from bottom to top (i.e., the branch closest to `main` first, up to the tip).
+Iterate through the stack from bottom to top (i.e., the branch closest to `<root-branch>` first, up to the tip).
 
 For each branch:
 
@@ -42,9 +42,9 @@ For each branch:
 
 2. Determine its parent from `git config git-stack.<branch>.parent`.
 
-3. Rebase onto the parent. For the **bottom branch** (whose parent is `main`), rebase onto `origin/main`:
+3. Rebase onto the parent. For the **bottom branch** (whose parent is `<root-branch>`), rebase onto `origin/<root-branch>`:
    ```
-   git rebase origin/main
+   git rebase origin/<root-branch>
    ```
    For all **subsequent branches**, rebase onto the already-rebased branch below them (the local branch, not its remote):
    ```
@@ -94,7 +94,7 @@ Show a clear summary of what happened:
 
 ```
 Sync complete:
-  stack/01-feature-a   rebased onto origin/main   pushed ✓
+  stack/01-feature-a   rebased onto origin/<root-branch>   pushed ✓
   stack/02-feature-b   rebased onto stack/01       pushed ✓
   stack/03-feature-c   rebased onto stack/02       local only (not pushed)
 ```
@@ -111,14 +111,14 @@ Possible statuses per branch:
 - Always use `--force-with-lease`, never bare `--force`.
 - Never auto-resolve genuine conflicts — always show them to the user and wait.
 - Skip already-merged (squash artifact) commits automatically without asking.
-- Rebase order is always bottom-to-top: the branch closest to `main` is rebased first.
-- The bottom branch always rebases onto `origin/main` (the fetched remote ref), not the local `main`.
+- Rebase order is always bottom-to-top: the branch closest to `<root-branch>` is rebased first.
+- The bottom branch always rebases onto `origin/<root-branch>` (the fetched remote ref), not the local `<root-branch>`.
 - All other branches rebase onto their local parent (which was just rebased in the previous step).
 - Do not modify git-stack metadata during sync — this skill only rebases, it does not restructure the stack.
 
 ## Edge Cases
 
-- **Single-branch stack:** Rebase that one branch onto `origin/main` normally.
+- **Single-branch stack:** Rebase that one branch onto `origin/<root-branch>` normally.
 - **Already up to date:** If a branch is already up to date after rebase, git will report "nothing to do" — note this in the summary as `already up to date`.
 - **Rebase produces empty commit (fully squashed):** This will trigger the already-merged path — use `git rebase --skip`.
 - **User aborts mid-sync:** Run `git rebase --abort` on the current branch, then switch back to the branch the user was on before `/gs-sync` was invoked. Report which branches were successfully rebased and which were not.

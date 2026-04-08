@@ -21,7 +21,7 @@ Display the full stack before doing anything, so the user knows what will be sub
 
 ```
 Stack to submit:
-  main
+  <root-branch>
   └─ stack/01-feature-a       (no PR yet)
   └─ stack/02-feature-b       (no PR yet)
   └─ stack/03-feature-c       (no PR yet)
@@ -78,7 +78,7 @@ Generate:
 Display the proposed title and description and ask the user to confirm, edit, or skip this branch:
 
 ```
-PR for stack/01-feature-a (base: main)
+PR for stack/01-feature-a (base: <root-branch>)
 Title: feat(auth): add token refresh endpoint
 ---
 Description:
@@ -155,7 +155,7 @@ Possible statuses per branch:
 ## Rules
 
 - Always use `--force-with-lease`, never bare `--force`.
-- PR base is always the branch's `.parent` in the stack metadata, never hardcoded to `main` (unless the parent actually is `main`).
+- PR base is always the branch's `.parent` in the stack metadata — never hardcoded.
 - Idempotent: running twice with no local changes must be a no-op (all branches skipped).
 - Do NOT add `Co-Authored-By` lines anywhere.
 - Do NOT add `🤖 Generated with Claude Code` lines to PR descriptions.
@@ -167,7 +167,7 @@ Possible statuses per branch:
 ## Edge Cases
 
 - **Single-branch stack:** Process that one branch normally.
-- **Bottom branch's parent is main:** Base the PR on `main`. This is correct.
+- **Bottom branch's parent is `<root-branch>`:** Base the PR on `<root-branch>`. This is correct.
 - **Remote branch does not exist yet:** `git push --force-with-lease -u origin <branch>` will create it.
 - **Push rejected (non-fast-forward and lease mismatch):** Report the error, tell the user to run `/gs-sync` to rebase first, and stop processing further branches.
 - **gh pr create fails (e.g. PR already exists but wasn't detected):** Catch the error, report it, and continue with remaining branches.

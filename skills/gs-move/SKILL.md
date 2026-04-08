@@ -5,6 +5,8 @@ description: Use when the user wants to change a branch's position in the stack,
 
 You are implementing `/gs-move`. This reorders a branch within the stack, or detaches it entirely. No pushing, no PRs.
 
+**Note:** Examples below use `main` as the root branch. In practice, use `<root-branch>` (read from `git config git-stack.root`) wherever `main` appears in commands.
+
 ## Steps
 
 ### 1. Check working tree
@@ -30,7 +32,7 @@ Display the full stack with the current branch marked. Example:
 
 ```
 Stack:
-  main
+  <root-branch>
   └─ stack/01-feature-a
   └─ stack/02-feature-b  ← (you are here)
   └─ stack/03-feature-c
@@ -41,10 +43,10 @@ Stack:
 Present the following options:
 
 > What would you like to do?
-> 1. Move up — swap with the parent branch (move closer to main)
-> 2. Move down — swap with the child branch (move further from main)
+> 1. Move up — swap with the parent branch (move closer to `<root-branch>`)
+> 2. Move down — swap with the child branch (move further from `<root-branch>`)
 > 3. Move to position — pick a specific position in the stack
-> 4. Detach — remove from stack and make it a standalone branch off main
+> 4. Detach — remove from stack and make it a standalone branch off `<root-branch>`
 
 Wait for the user to choose. Then proceed to the matching section below.
 
@@ -54,8 +56,8 @@ Wait for the user to choose. Then proceed to the matching section below.
 
 Swap the current branch with the one immediately above it.
 
-**Precondition:** the current branch must not already be the closest to `main` (i.e. its parent cannot be the stack root such as `main`). If it is, report:
-> Already the first branch in the stack (closest to main). Nothing to move.
+**Precondition:** the current branch must not already be the closest to `<root-branch>` (i.e. its parent cannot be `<root-branch>`). If it is, report:
+> Already the first branch in the stack (closest to `<root-branch>`). Nothing to move.
 
 **Example:**
 
@@ -65,13 +67,13 @@ After "move up": `main → B → A → C`
 
 Metadata updates:
 ```
-git config git-stack.B.parent main
+git config git-stack.B.parent <root-branch>
 git config git-stack.A.parent B
 git config git-stack.C.parent A
 ```
 
 Rebase order (use `--onto` to transplant each branch from its old parent to its new parent):
-1. `git rebase --onto B main A` (transplant A from main to B)
+1. `git rebase --onto B <root-branch> A` (transplant A from `<root-branch>` to B)
 2. `git rebase --onto A B C` (transplant C from B to A)
 
 Return to `B` when done.
@@ -94,8 +96,8 @@ Let `current` = current branch, `above` = its parent, `above-parent` = parent of
 
 Swap the current branch with the one immediately below it.
 
-**Precondition:** the current branch must not already be at the tip of the stack (farthest from `main`, with no child branch). If it is, report:
-> Already the last branch in the stack (farthest from main). Nothing to move.
+**Precondition:** the current branch must not already be at the tip of the stack (farthest from `<root-branch>`, with no child branch). If it is, report:
+> Already the last branch in the stack (farthest from `<root-branch>`). Nothing to move.
 
 **Example:**
 
@@ -136,7 +138,7 @@ Show the stack with numbered insertion positions (like `/gs-insert`). Example:
 
 ```
 Stack:
-  main
+  <root-branch>
     ↓  ← [1] move here
   stack/01-feature-a
     ↓  ← [2] move here
@@ -160,13 +162,13 @@ Once the target position is chosen, update metadata and rebase as needed:
 
 ## Action: Detach
 
-Remove the current branch from the stack entirely and make it a standalone branch off main.
+Remove the current branch from the stack entirely and make it a standalone branch off `<root-branch>`.
 
 **Example:**
 
 Stack before: `main → A → B → C`. User detaches `B`.
 
-Result: stack is `main → A → C`, `B` is standalone off main.
+Result: stack is `main → A → C`, `B` is standalone off `<root-branch>`.
 
 Metadata updates:
 ```
@@ -175,7 +177,7 @@ git config --unset git-stack.B.parent
 ```
 
 Rebase order (use `--onto` to transplant each branch from its old parent to its new parent):
-1. `git rebase --onto main A B` (transplant B from A to main)
+1. `git rebase --onto <root-branch> A B` (transplant B from A to `<root-branch>`)
 2. `git rebase --onto A B C` (transplant C from B to A, closing the gap)
 
 Return to `B` when done.
@@ -189,7 +191,7 @@ Let `current` = current branch, `parent` = parent of `current`, `below` = child 
    ```
    git config --unset git-stack.current.parent
    ```
-3. `git rebase --onto main parent current` (transplant `current` from `parent` to `main`).
+3. `git rebase --onto <root-branch> parent current` (transplant `current` from `parent` to `<root-branch>`).
 4. If `below` exists: `git rebase --onto parent current below` (transplant `below` from `current` to `parent`), then continue rebasing any further downstream branches with `git rebase --onto <new-parent> <old-parent> <branch>`, in order.
 5. Return to `current`.
 
@@ -217,7 +219,7 @@ Report any failures. Do not declare the move complete until the user has acknowl
 ## Edge Cases
 
 - **Stack has only one branch:** Moving up or down is not possible. Detach is allowed. Report appropriately.
-- **Current branch is closest to main (parent = main):** "Move up" is a no-op. Report and stop.
-- **Current branch is farthest from main (no child):** "Move down" is a no-op. Report and stop.
-- **Detaching the only branch in the stack:** Unset metadata and rebase onto main. The stack becomes empty.
+- **Current branch is closest to `<root-branch>` (parent = `<root-branch>`):** "Move up" is a no-op. Report and stop.
+- **Current branch is farthest from `<root-branch>` (no child):** "Move down" is a no-op. Report and stop.
+- **Detaching the only branch in the stack:** Unset metadata and rebase onto `<root-branch>`. The stack becomes empty.
 - **Dirty working tree:** If `git status` shows uncommitted changes or unresolved conflicts before starting, stop and tell the user to clean up first.

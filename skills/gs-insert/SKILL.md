@@ -32,7 +32,7 @@ Display the full stack graph with numbered insertion points between each adjacen
 
 ```
 Stack:
-  main
+  <root-branch>
     ↓  ← [1] insert here
   stack/03-use-date-locale
     ↓  ← [2] insert here
@@ -41,7 +41,7 @@ Stack:
   stack/05-data-table-meta
 ```
 
-Insertion position `[1]` means between `main` and the first stacked branch. The last position means between the last branch and the tip (appending to the end of the stack).
+Insertion position `[1]` means between `<root-branch>` and the first stacked branch. The last position means between the last branch and the tip (appending to the end of the stack).
 
 ### 4. Ask for the insertion position
 
@@ -130,7 +130,7 @@ git checkout <branch>
 # run verification commands
 ```
 
-Work through branches from the one closest to `main` to the tip. After verification, return to the new branch:
+Work through branches from the one closest to `<root-branch>` to the tip. After verification, return to the new branch:
 
 ```
 git checkout <new-branch>
@@ -162,7 +162,7 @@ Show a summary:
 
 - **No stack exists:** Report error and suggest `/gs-create`.
 - **Inserting at the tip (no branch below):** No downstream rebase needed. Only set `git-stack.<new-branch>.parent <branch-above>`.
-- **Inserting at position [1] (between root and first stacked branch):** `<branch-above>` is `main` (or the stack root). `<branch-below>` is the first stacked branch — update its parent to point to the new branch, then rebase all downstream.
+- **Inserting at position [1] (between root and first stacked branch):** `<branch-above>` is `<root-branch>`. `<branch-below>` is the first stacked branch — update its parent to point to the new branch, then rebase all downstream.
 - **Rebase conflicts:** Stop, show the conflicting branch, instruct the user to resolve manually, and explain how to continue (`git rebase --continue`).
 - **Dirty index with conflicts:** If `git status` shows merge conflicts before starting, stop and tell the user to resolve conflicts first.
 - **Current branch is in the downstream:** After the rebase, the user's original current branch will have been rebased. Ensure `git checkout <new-branch>` lands correctly.
