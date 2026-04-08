@@ -1,0 +1,18 @@
+{
+  "name": "tbekaert-plugins",
+  "owner": {
+    "name": "tbekaert"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by tbekaert"
+  },
+  "plugins": [
+    {
+      "name": "claude-ghstack",
+      "source": "./",
+      "description": "Stacked PR management — create, reorder, publish, sync, and merge stacked branches",
+      "version": "0.1.0",
+      "keywords": ["stacked-prs", "git", "github"]
+    }
+  ]
+}
