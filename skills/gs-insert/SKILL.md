@@ -96,14 +96,15 @@ git config git-stack.<branch-below>.parent <new-branch>
 
 ### 9. Rebase downstream branches
 
-Rebase each branch below the insertion point in order (closest first, down to the tip). For each downstream branch `<downstream>`:
+Rebase each branch below the insertion point in order (closest first, down to the tip). For each downstream branch `<downstream>`, transplant it from its old parent to its new parent using `--onto`:
 
 ```
-git checkout <downstream>
-git rebase <its-new-parent>
+git rebase --onto <new-parent> <old-parent> <downstream>
 ```
 
-Where `<its-new-parent>` is the branch immediately above it in the updated stack. **Follow the [conflict handling](../../docs/conflict-handling.md) pattern.** Pause on genuine conflicts — list conflicted files, show the user, wait for resolution.
+Where `<new-parent>` is the branch immediately above it in the **updated** stack, and `<old-parent>` is the branch that was immediately above it in the **old** stack (before the insertion). For the first downstream branch, `<old-parent>` is the branch that was previously above the insertion point (i.e. `<branch-above>`), and `<new-parent>` is the newly inserted branch.
+
+**Follow the [conflict handling](../../docs/conflict-handling.md) pattern.** Pause on genuine conflicts — list conflicted files, show the user, wait for resolution.
 
 After all rebases, return to the new branch:
 ```

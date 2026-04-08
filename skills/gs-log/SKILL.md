@@ -37,8 +37,10 @@ gh pr list --head <branch> --state open --json number,url --jq '.[0]'
 
 **CI check status** (only if a PR exists):
 ```bash
-gh pr checks <number> --json state --jq '[.[].state] | if any(. == "FAILURE" or . == "ERROR") then "failed" elif any(. == "PENDING" or . == "IN_PROGRESS") then "pending" else "success" end'
+gh pr checks <number> --json state --jq '[.[].state] | if any(. == "FAILURE" or . == "failure" or . == "ERROR" or . == "error") then "failed" elif any(. == "PENDING" or . == "pending" or . == "IN_PROGRESS" or . == "in_progress") then "pending" else "success" end'
 ```
+
+Note: `gh pr checks --json state` may return lowercase values (e.g. `"failure"`, `"pending"`, `"success"`) depending on the `gh` version. The jq filter checks both cases for compatibility.
 
 **Unresolved review thread count** (only if a PR exists):
 

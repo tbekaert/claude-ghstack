@@ -65,12 +65,12 @@ If verification fails, report the failure output and stop. Do not proceed to the
 
 ### 6. Ask about pushing
 
-For each branch in the stack, check if it has a remote tracking branch:
+For each branch in the stack, check if a remote tracking ref exists (after the earlier `git fetch origin`):
 ```
-git config --get branch.<branch>.remote
+git rev-parse --verify --quiet origin/<branch>
 ```
 
-If at least one branch has a remote configured, ask the user:
+If the command exits 0, the branch has been pushed before. If at least one branch has a remote ref, ask the user:
 
 ```
 Rebase complete. Push updated branches to remote? (yes / no)
@@ -78,7 +78,7 @@ Rebase complete. Push updated branches to remote? (yes / no)
 
 Wait for the user's response.
 
-- **If yes:** For each branch that has a remote tracking branch (where `git config --get branch.<branch>.remote` returned output), push with:
+- **If yes:** For each branch that has a remote ref (where `git rev-parse --verify --quiet origin/<branch>` exited 0), push with:
   ```
   git push --force-with-lease origin <branch>
   ```

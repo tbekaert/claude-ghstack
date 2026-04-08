@@ -103,10 +103,11 @@ Record the created PR URL/number in the running summary.
 
 **a. Check for local changes vs remote:**
 ```
-git diff <branch> origin/<branch>
+git rev-parse <branch>
+git rev-parse origin/<branch>
 ```
 
-If the diff is empty, the branch has no new local commits since the last push. Skip this branch and note "no changes" in the summary.
+If both commands return the same commit hash, the branch has no new local commits since the last push. Skip this branch and note "no changes" in the summary.
 
 **b. Push the updated branch:**
 ```

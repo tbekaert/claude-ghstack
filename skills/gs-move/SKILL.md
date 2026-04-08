@@ -33,8 +33,8 @@ Stack:
 Present the following options:
 
 > What would you like to do?
-> 1. Move up — swap with the branch above (closer to main)
-> 2. Move down — swap with the branch below (further from main)
+> 1. Move up — swap with the parent branch (move closer to main)
+> 2. Move down — swap with the child branch (move further from main)
 > 3. Move to position — pick a specific position in the stack
 > 4. Detach — remove from stack and make it a standalone branch off main
 
@@ -46,8 +46,8 @@ Wait for the user to choose. Then proceed to the matching section below.
 
 Swap the current branch with the one immediately above it.
 
-**Precondition:** the current branch must not already be at the top of the stack (i.e. its parent cannot be the stack root such as `main`). If it is, report:
-> Already at the top of the stack. Nothing to move.
+**Precondition:** the current branch must not already be the closest to `main` (i.e. its parent cannot be the stack root such as `main`). If it is, report:
+> Already the first branch in the stack (closest to main). Nothing to move.
 
 **Example:**
 
@@ -62,9 +62,9 @@ git config git-stack.A.parent B
 git config git-stack.C.parent A
 ```
 
-Rebase order:
-1. `git checkout A && git rebase B`
-2. `git checkout C && git rebase A`
+Rebase order (use `--onto` to transplant each branch from its old parent to its new parent):
+1. `git rebase --onto B above-parent A` (transplant A from its old parent to B)
+2. `git rebase --onto A B C` (transplant C from B to A)
 
 Return to `B` when done.
 
@@ -75,9 +75,9 @@ Let `current` = current branch, `above` = its parent, `above-parent` = parent of
 1. Set `git-stack.current.parent = above-parent`
 2. Set `git-stack.above.parent = current`
 3. If `below` exists: set `git-stack.below.parent = above`
-4. Rebase `above` onto `current`
-5. If `below` exists: rebase `below` onto `above`
-6. Continue rebasing any further downstream branches onto their new parents, in order.
+4. `git rebase --onto current above-parent above` (transplant `above` from `above-parent` to `current`)
+5. If `below` exists: `git rebase --onto above current below` (transplant `below` from `current` to `above`)
+6. Continue rebasing any further downstream branches with `git rebase --onto <new-parent> <old-parent> <branch>`, in order.
 7. Return to `current`.
 
 ---
@@ -86,8 +86,8 @@ Let `current` = current branch, `above` = its parent, `above-parent` = parent of
 
 Swap the current branch with the one immediately below it.
 
-**Precondition:** the current branch must not already be at the tip (bottom) of the stack. If it is, report:
-> Already at the bottom of the stack. Nothing to move.
+**Precondition:** the current branch must not already be at the tip of the stack (farthest from `main`, with no child branch). If it is, report:
+> Already the last branch in the stack (farthest from main). Nothing to move.
 
 **Example:**
 
@@ -101,9 +101,9 @@ git config git-stack.C.parent A
 git config git-stack.B.parent C
 ```
 
-Rebase order:
-1. `git checkout C && git rebase A`
-2. `git checkout B && git rebase C`
+Rebase order (use `--onto` to transplant each branch from its old parent to its new parent):
+1. `git rebase --onto A B C` (transplant C from B to A)
+2. `git rebase --onto C A B` (transplant B from A to C)
 
 Return to `B` when done.
 
@@ -114,10 +114,10 @@ Let `current` = current branch, `parent` = parent of `current`, `below` = child 
 1. Set `git-stack.below.parent = parent`
 2. Set `git-stack.current.parent = below`
 3. If `below-child` exists: set `git-stack.below-child.parent = current`
-4. Rebase `below` onto `parent`
-5. Rebase `current` onto `below`
-6. If `below-child` exists: rebase `below-child` onto `current`
-7. Continue rebasing any further downstream branches onto their new parents, in order.
+4. `git rebase --onto parent current below` (transplant `below` from `current` to `parent`)
+5. `git rebase --onto below parent current` (transplant `current` from `parent` to `below`)
+6. If `below-child` exists: `git rebase --onto current below below-child` (transplant `below-child` from `below` to `current`)
+7. Continue rebasing any further downstream branches with `git rebase --onto <new-parent> <old-parent> <branch>`, in order.
 8. Return to `current`.
 
 ---
@@ -145,7 +145,7 @@ Once the target position is chosen, update metadata and rebase as needed:
 
 1. Remove `current` from its current position: update the branch that was below `current` to point to `current`'s old parent.
 2. Insert `current` at the target position: update `current`'s parent to `<branch-above-target>`, and update `<branch-below-target>.parent` to `current` (if a branch exists below).
-3. Rebase all affected branches in top-down order. Affected branches are any branches whose parent changed or that sit downstream of a changed parent.
+3. Rebase all affected branches in top-down order using `git rebase --onto <new-parent> <old-parent> <branch>` for each. Affected branches are any branches whose parent changed or that sit downstream of a changed parent.
 4. Return to `current`.
 
 ---
@@ -166,9 +166,9 @@ git config git-stack.C.parent A
 git config --unset git-stack.B.parent
 ```
 
-Rebase order:
-1. `git checkout B && git rebase main` (detach onto main)
-2. `git checkout C && git rebase A` (close the gap in the stack)
+Rebase order (use `--onto` to transplant each branch from its old parent to its new parent):
+1. `git rebase --onto main A B` (transplant B from A to main)
+2. `git rebase --onto A B C` (transplant C from B to A, closing the gap)
 
 Return to `B` when done.
 
@@ -181,8 +181,8 @@ Let `current` = current branch, `parent` = parent of `current`, `below` = child 
    ```
    git config --unset git-stack.current.parent
    ```
-3. Rebase `current` onto the stack root (e.g. `main`).
-4. If `below` exists: rebase `below` onto `parent`, then continue rebasing any further downstream branches in order.
+3. `git rebase --onto main parent current` (transplant `current` from `parent` to `main`).
+4. If `below` exists: `git rebase --onto parent current below` (transplant `below` from `current` to `parent`), then continue rebasing any further downstream branches with `git rebase --onto <new-parent> <old-parent> <branch>`, in order.
 5. Return to `current`.
 
 ---
@@ -200,8 +200,8 @@ Report any failures. Do not declare the move complete until the user has acknowl
 ## Edge Cases
 
 - **Stack has only one branch:** Moving up or down is not possible. Detach is allowed. Report appropriately.
-- **Current branch is at the top (parent = main):** "Move up" is a no-op. Report and stop.
-- **Current branch is at the tip:** "Move down" is a no-op. Report and stop.
+- **Current branch is closest to main (parent = main):** "Move up" is a no-op. Report and stop.
+- **Current branch is farthest from main (no child):** "Move down" is a no-op. Report and stop.
 - **Detaching the only branch in the stack:** Unset metadata and rebase onto main. The stack becomes empty.
 - **Dirty working tree:** If `git status` shows uncommitted changes or unresolved conflicts before starting, stop and tell the user to clean up first.
 

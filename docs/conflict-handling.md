@@ -9,19 +9,33 @@ Used during `git rebase` operations within a stack. After each rebase command, c
 
 When a commit was squash-merged (or merge-committed) upstream, its changes already exist in the base and git cannot apply the commit cleanly — but there is no real conflict, the code is already there.
 
-**Detection:** Check conflicting files after the rebase stops:
+**Detection:** After the rebase stops, check whether the conflict is a squash artifact by accepting the current (base) version and comparing:
 
 ```bash
-git diff --name-only --diff-filter=U
+# Resolve all conflicts by accepting the base version
+git checkout --theirs .
+git add .
+
+# Check if the result is identical to the base
+git diff --cached --quiet
 ```
 
-If the conflicting files show only identical upstream changes (the incoming change exactly matches what is already in the base), this is a squash artifact. Skip it automatically:
+If `git diff --cached --quiet` exits 0 (no differences), the commit being replayed is entirely redundant — it is a squash artifact. Skip it:
 
 ```bash
+git reset --hard
 git rebase --skip
 ```
 
-Keep calling `git rebase --skip` (checking after each call) until the rebase either completes successfully or a genuine conflict is detected. Do not ask the user before skipping — this is mechanical cleanup.
+If `git diff --cached --quiet` exits non-zero, there are real changes in this commit beyond what exists in the base. Reset and treat it as a genuine conflict:
+
+```bash
+git reset --merge
+```
+
+Then follow the genuine conflict flow below.
+
+Keep checking after each `git rebase --skip` until the rebase either completes successfully or a genuine conflict is detected. Do not ask the user before skipping squash artifacts — this is mechanical cleanup.
 
 **When this applies:** Squash strategy and merge-commit strategy both produce this situation. Rebase strategy replays commits individually, so downstream branches generally do not produce squash artifacts.
 

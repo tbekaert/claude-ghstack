@@ -111,17 +111,32 @@ gh pr merge <number> --squash    # or --rebase or --merge based on chosen strate
 
 **CRITICAL: Never use `--delete-branch`.** The branch must remain until the next PR has been retargeted.
 
-#### 6d. Retarget next PR
+#### 6d. Retarget PRs and update stack metadata
 
-If there is a next PR in the stack:
+This must happen before the merged branch is deleted, so GitHub can correctly update the diff.
+
+**If scope is "all":** Only the immediate next PR needs retargeting (its base becomes `main`), since the merge cycle will process it next:
 
 ```bash
 gh pr edit <next-pr-number> --base main
 ```
 
-This must happen before the merged branch is deleted, so GitHub can correctly update the diff on the next PR.
+Update its stack metadata to reflect the new parent:
+```bash
+git config git-stack.<next-branch>.parent main
+```
 
-If this was the last PR, skip this step.
+**If scope is "next" (merge only one PR):** The immediate next PR must be retargeted to `main`, AND its stack metadata must be updated. All further downstream branches keep their existing parent pointers (they still chain off each other correctly):
+
+```bash
+gh pr edit <next-pr-number> --base main
+git config git-stack.<next-branch>.parent main
+```
+
+After the full merge cycle completes for the single PR (including rebase in step 6g), report to the user:
+> Remaining stack has been rebased. Run `/gs-submit` to update the remaining PRs on GitHub.
+
+If this was the last PR in the stack, skip this step.
 
 #### 6e. Delete merged branch
 
@@ -143,18 +158,26 @@ This updates `origin/main` to the post-merge state before rebasing.
 
 #### 6g. Rebase remaining stack
 
-For each remaining branch in the stack, in order from bottom (closest to `main`) to top (tip):
+For each remaining branch in the stack, in order from the branch closest to `main` outward to the tip:
 
 - The **first remaining branch** rebases onto `origin/main`
 - Each **subsequent branch** rebases onto the locally-rebased branch below it (not its remote)
 
-```bash
-git checkout <branch>
-git rebase <target>
-git push --force-with-lease origin <branch>
-```
+For each branch:
 
-**Follow the [conflict handling](../../docs/conflict-handling.md) pattern** for each rebase. Auto-skip squash artifacts (expected after squash and merge-commit strategies); pause and wait for the user on genuine conflicts.
+1. Rebase:
+   ```bash
+   git checkout <branch>
+   git rebase <target>
+   ```
+
+2. **Follow the [conflict handling](../../docs/conflict-handling.md) pattern.** Auto-skip squash artifacts (expected after squash and merge-commit strategies); pause and wait for the user on genuine conflicts. **Only proceed to the push step after the rebase completes successfully.**
+
+3. Push only if the branch has a remote ref (check with `git rev-parse --verify --quiet origin/<branch>`):
+   ```bash
+   git push --force-with-lease origin <branch>
+   ```
+   Skip pushing branches that have never been published — those should go through `/gs-submit` for PR title/description approval.
 
 ### 7. Report summary
 
