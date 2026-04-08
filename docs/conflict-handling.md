@@ -12,7 +12,8 @@ When a commit was squash-merged (or merge-committed) upstream, its changes alrea
 **Detection:** After the rebase stops, check whether the conflict is a squash artifact by accepting the current (base) version and comparing:
 
 ```bash
-# Resolve all conflicts by accepting the base version
+# During a rebase, --theirs refers to the branch being rebased onto (the base),
+# and --ours refers to the commit being replayed. So --theirs accepts the base version.
 git checkout --theirs .
 git add .
 

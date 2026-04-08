@@ -13,7 +13,8 @@ git status --short
 - **If there are staged or unstaged changes** (including untracked files the user likely wants included):
   1. Show the user the `git status` output so they can see what will be staged.
   2. Warn if any potentially sensitive files (`.env`, credentials files, private keys) appear in the changeset — ask the user to confirm before staging them.
-  3. Stage specific files by name rather than using a blanket `git add -A`:
+  3. If files are already staged (shown as green in `git status`), include them in the list shown to the user. Do not unstage them unless the user asks.
+  4. Stage any additional files by name rather than using a blanket `git add -A`:
      ```bash
      git add <file1> <file2> ...
      ```

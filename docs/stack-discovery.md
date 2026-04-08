@@ -35,6 +35,15 @@ git config git-stack.<branch>.parent <parent-branch>
 
 Repeat for each branch/parent pair discovered.
 
+**Remote-only branches:** If the fallback discovers a branch that exists on the remote (has an open PR) but does not exist locally, fetch it first:
+
+```bash
+git fetch origin <branch>
+git checkout -b <branch> origin/<branch>
+```
+
+Then record its metadata as normal. If the fetch fails, skip that branch and note it in the output.
+
 ### 3. No stack found
 
 If neither source yields a stack, stop and report:
