@@ -57,6 +57,24 @@ Copy (or symlink) this directory into your project's `.claude/plugins/` folder:
 cp -r claude-ghstack /your/project/.claude/plugins/claude-ghstack
 ```
 
+### Updating
+
+```bash
+# Refresh the marketplace to detect new versions
+/plugin marketplace update tbekaert-plugins
+
+# Update the plugin
+/plugin update claude-ghstack@tbekaert-plugins
+```
+
+If the update isn't detected, remove and reinstall:
+
+```bash
+/plugin marketplace remove tbekaert-plugins
+/plugin marketplace add tbekaert/claude-ghstack
+/plugin install claude-ghstack@tbekaert-plugins
+```
+
 ### Verify
 
 Run `/gs-help` to verify the plugin is active.
