@@ -18,7 +18,7 @@ Get the current branch:
 git rev-parse --abbrev-ref HEAD
 ```
 
-Determine the current branch's position in the stack (1-indexed, where 1 is closest to `main`). If the current branch is `main` or not in the stack, note this — the user can still navigate.
+Determine the current branch's position in the stack (1-indexed, where 1 is closest to `<root-branch>`). If the current branch is `<root-branch>` or not in the stack, note this — the user can still navigate.
 
 ### 2. Parse the argument
 
@@ -27,14 +27,16 @@ The user may pass an argument after `/gs-nav`. Parse it as follows:
 | Argument | Action |
 |---|---|
 | *(none)* | Interactive mode — show the stack and ask the user to pick (see step 3) |
-| `next` or `n` | Move one branch farther from `main` (the child branch) |
-| `prev` or `p` | Move one branch closer to `main` (the parent branch) |
-| `first` or `f` | Jump to the branch closest to `main` (first in the stack) |
-| `last` or `l` | Jump to the branch farthest from `main` (tip of the stack) |
-| `main` | Check out `main` (exit the stack) |
-| A number (e.g. `3`) | Jump to the Nth branch in the stack (1-indexed, 1 = closest to `main`) |
+| `next` or `n` | Move one branch farther from `<root-branch>` (the child branch) |
+| `prev` or `p` | Move one branch closer to `<root-branch>` (the parent branch) |
+| `first` or `f` | Jump to the branch closest to `<root-branch>` (first in the stack) |
+| `last` or `l` | Jump to the branch farthest from `<root-branch>` (tip of the stack) |
+| `root` or `r` | Check out `<root-branch>` (exit the stack) |
+| A number (e.g. `3`) | Jump to the Nth branch in the stack (1-indexed, 1 = closest to `<root-branch>`) |
 
-If the argument doesn't match any of the above, report: "Unknown argument. Use `next`, `prev`, `first`, `last`, `main`, or a branch number."
+If the argument matches the actual root branch name (e.g. `main`, `master`), treat it the same as `root`.
+
+If the argument doesn't match any of the above, report: "Unknown argument. Use `next`, `prev`, `first`, `last`, `root`, or a branch number."
 
 ### 3. Interactive mode (no argument)
 
@@ -42,7 +44,7 @@ Show the stack with numbered branches and the current position:
 
 ```
 Stack:
-  main
+  <root-branch>
     ↓
   [1] feat/auth
     ↓
@@ -50,7 +52,7 @@ Stack:
     ↓
   [3] feat/ui
 
-Jump to: [number] / [n]ext / [p]rev / [f]irst / [l]ast / [main]
+Jump to: [number] / [n]ext / [p]rev / [f]irst / [l]ast / [r]oot
 ```
 
 Wait for the user's response, then parse it using the same rules as step 2.
@@ -59,10 +61,10 @@ Wait for the user's response, then parse it using the same rules as step 2.
 
 Before checking out, validate:
 
-- **`next` from `main`:** Jump to the first stacked branch (closest to `main`). This is not an error — proceed to step 5.
-- **`next` from the tip:** Report "Already at the last branch in the stack (farthest from main). Nowhere to go." and stop.
-- **`prev` from the first branch:** Report "Already the first branch in the stack (closest to main). Use `/gs-nav main` to check out main." and stop.
-- **`prev` from `main`:** Report "Already on main." and stop.
+- **`next` from `<root-branch>`:** Jump to the first stacked branch (closest to `<root-branch>`). This is not an error — proceed to step 5.
+- **`next` from the tip:** Report "Already at the last branch in the stack (farthest from `<root-branch>`). Nowhere to go." and stop.
+- **`prev` from the first branch:** Report "Already the first branch in the stack (closest to `<root-branch>`). Use `/gs-nav root` to check out `<root-branch>`." and stop.
+- **`prev` from `<root-branch>`:** Report "Already on `<root-branch>`." and stop.
 - **Number out of range:** Report "Branch number N is out of range. The stack has N branches." and stop.
 - **Already on the target branch:** Report "Already on [branch name]." and stop.
 
@@ -86,7 +88,7 @@ Position labels:
 - Branch 1: `(1 of N, first in stack)`
 - Branch N (last): `(N of N, last in stack)`
 - Any other: `(M of N)`
-- `main`: `(main, outside stack)`
+- `<root-branch>`: `(<root-branch>, outside stack)`
 
 The skill is done. No further action, no follow-up questions.
 
@@ -96,11 +98,11 @@ The skill is done. No further action, no follow-up questions.
 - Never add a blanket dirty-tree pre-check — let `git checkout` fail naturally if there are conflicts
 - `gh` is not required — this is entirely local
 - In interactive mode, wait for the user to choose before checking out
-- Use "closer to `main`" / "farther from `main`" for direction — never "top" / "bottom"
+- Use "closer to `<root-branch>`" / "farther from `<root-branch>`" for direction — never "top" / "bottom"
 
 ## Edge Cases
 
-- **Current branch is `main`:** The user is outside the stack. `next` jumps to the first stacked branch. `prev` reports "Already on main." Interactive mode still shows the full stack.
+- **Current branch is `<root-branch>`:** The user is outside the stack. `next` jumps to the first stacked branch. `prev` reports "Already on `<root-branch>`." Interactive mode still shows the full stack.
 - **Current branch is not part of the discovered stack:** A stack exists (git config has `git-stack.*` keys) but the current branch isn't in it. Report "Current branch is not part of this stack." and show the stack so the user can pick a branch to navigate to.
 - **Stack has only one branch:** `next` and `prev` both report they're at the edge. `first` and `last` both go to the same branch. Number `1` works.
 - **Checkout fails due to uncommitted changes:** Report the git error and suggest: "Commit or stash your changes first, or use `/gs-create` to start a new branch with your current changes."

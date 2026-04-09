@@ -23,7 +23,7 @@ git rev-parse --abbrev-ref HEAD
 
 ### 3. Gather Info Per Branch
 
-For each branch in the stack (from the branch farthest from `main` to the one closest):
+For each branch in the stack (from the branch farthest from `<root-branch>` to the one closest):
 
 **Commit count vs parent:**
 ```bash
@@ -83,12 +83,12 @@ Format rules:
 - Other branches: prefix with two spaces for alignment
 - PR number rendered as a clickable markdown link: `[PR #N](url)`
 - Commit count: `N commit` (singular) or `N commits` (plural)
-- The root anchor (e.g. `main`) has no PR info or commit count
+- The root anchor (`<root-branch>`) has no PR info or commit count
 
 **Example output:**
 
 ```
-  main
+  <root-branch>
     ↓
   stack/03-use-date-locale ([PR #175](https://github.com/owner/repo/pull/175) ✓ ready) 1 commit
     ↓

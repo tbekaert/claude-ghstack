@@ -14,7 +14,7 @@ Stacked PR Skills (claude-ghstack plugin)
   Network operations:
     /gs-submit   — Push all branches + create/update PRs
     /gs-sync     — Rebase the stack + optionally push
-    /gs-merge    — Merge PRs into main with cleanup
+    /gs-merge    — Merge PRs into base branch with cleanup
 
   Info:
     /gs-log      — Show the stack graph with PR status
@@ -23,7 +23,7 @@ Stacked PR Skills (claude-ghstack plugin)
   Typical workflow:
     1. /gs-create to build your stack locally
     2. /gs-submit to publish PRs
-    3. /gs-sync after changes or main updates
+    3. /gs-sync after changes or base branch updates
     4. /gs-merge when PRs are approved
 
   Metadata is stored in .git/config (git-stack.* keys).

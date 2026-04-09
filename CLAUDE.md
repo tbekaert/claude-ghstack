@@ -32,7 +32,10 @@ Skills reference these via relative links like `../../docs/stack-discovery.md`. 
 
 ### Stack Metadata
 
-All stack state lives in `.git/config` under `git-stack.<branch>.parent` keys. No files are committed or tracked. Skills read/write this config directly via `git config`.
+All stack state lives in `.git/config` under `git-stack.*` keys. No files are committed or tracked. Skills read/write this config directly via `git config`.
+
+- `git-stack.root` — the base branch name (e.g., `main`, `master`). Detected via `gh` on first stack creation, read by all skills. Skills must never hardcode `main` — always use the value from `git config git-stack.root`.
+- `git-stack.<branch>.parent` — the parent branch for each stacked branch.
 
 ### Skill Categories
 
@@ -57,14 +60,14 @@ When adding or editing skills:
 - Compare local vs remote with `git rev-parse` on both refs (not `git diff`)
 - All local skills start with a dirty-tree pre-check (`git status --porcelain`)
 - All mutating skills end with a verification step (read `CLAUDE.md` for project commands)
-- Use "closer to `main`" / "farther from `main`" for direction — never "top" / "bottom"
+- Use "closer to `<root-branch>`" / "farther from `<root-branch>`" for direction — never "top" / "bottom"
 
 ## Key Conventions Across Skills
 
 - Always use `--force-with-lease`, never bare `--force`
 - Never add `Co-Authored-By` lines or "Generated with Claude Code" lines
 - Always confirm branch names, commit messages, and PR descriptions with the user before acting
-- Rebase order is always bottom-to-top (closest to `main` first)
-- Bottom branch rebases onto `origin/main`; subsequent branches rebase onto their local parent
-- PR base is always the branch's `.parent` in stack metadata, not hardcoded to `main`
+- Rebase order is always bottom-to-top (closest to `<root-branch>` first)
+- Bottom branch rebases onto `origin/<root-branch>`; subsequent branches rebase onto their local parent
+- PR base is always the branch's `.parent` in stack metadata — never hardcoded
 - Never push branches that haven't been published yet — those must go through `/gs-submit` for PR approval

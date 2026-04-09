@@ -91,7 +91,7 @@ claude-ghstack provides nine slash commands that handle the entire stacked PR li
 | `/gs-nav`    | Switch to another branch in the stack (next, prev, by number, or pick)      |
 | `/gs-submit` | Push all branches and create/update PRs on GitHub with proper base branches |
 | `/gs-sync`   | Rebase the entire stack after upstream changes, optionally push             |
-| `/gs-merge`  | Merge approved PRs into `main` with automatic retarget, cleanup, and rebase |
+| `/gs-merge`  | Merge approved PRs into the base branch with automatic retarget and cleanup |
 | `/gs-log`    | Display the stack graph with PR status, CI checks, and review state         |
 | `/gs-help`   | Show the quick reference card                                               |
 
@@ -166,6 +166,7 @@ claude-ghstack provides nine slash commands that handle the entire stacked PR li
 Stack metadata is stored in `.git/config` under `git-stack.*` keys — no extra files to commit or track. Each branch records its parent, forming a linked list:
 
 ```
+git-stack.root             = main
 git-stack.feat/auth.parent = main
 git-stack.feat/api.parent  = feat/auth
 git-stack.feat/ui.parent   = feat/api
@@ -175,7 +176,9 @@ main ──▶ feat/auth ──▶ feat/api ──▶ feat/ui
            main          feat/auth    feat/api
 ```
 
-Each command reads the stack state by following these parent pointers, performs its operation, and updates the config. The chain is walked bottom-up (closest to `main` first) for rebasing and submitting, ensuring each branch is always based on the correct parent.
+The `git-stack.root` key stores the base branch name (detected automatically on first stack creation). The plugin works with any default branch — not just `main`.
+
+Each command reads the stack state by following these parent pointers, performs its operation, and updates the config. The chain is walked bottom-up (closest to the root first) for rebasing and submitting, ensuring each branch is always based on the correct parent.
 
 ### Key design decisions
 

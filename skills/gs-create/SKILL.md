@@ -21,7 +21,7 @@ Staged and unstaged changes are fine — they will be handled in step 6.
 
 ### 2. Discover the current stack position
 
-**Follow the [stack discovery](../../docs/stack-discovery.md) pattern** (git config only, no fallback). Display the relevant portion of the stack so the user can see where they are. If the current branch is `main`, note that this will start a new stack.
+**Follow the [stack discovery](../../docs/stack-discovery.md) pattern** (git config only, no fallback). Display the relevant portion of the stack so the user can see where they are.
 
 Get the current branch name:
 ```
@@ -29,6 +29,30 @@ git rev-parse --abbrev-ref HEAD
 ```
 
 Store it as `<current-branch>`.
+
+**If no stack exists yet** (no `git-stack.*` keys), this will start a new stack. Detect the repository's default branch:
+
+```bash
+gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'
+```
+
+Store the result as `<root-branch>`. If `gh` is unavailable, fall back to:
+
+```bash
+git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'
+```
+
+If both fail, default to `main` and confirm with the user:
+
+> Assuming `main` as the base branch. Is this correct? (yes / type the correct branch name)
+
+Once determined, persist the root:
+
+```bash
+git config git-stack.root <root-branch>
+```
+
+If the current branch is `<root-branch>`, note that this will start a new stack.
 
 ### 3. Determine the new branch name
 
@@ -107,7 +131,7 @@ Show a summary:
 
 ## Edge Cases
 
-- **Current branch is `main`:** This starts a new stack. Parent will be `main`. Proceed normally.
+- **Current branch is `<root-branch>`:** This starts a new stack. Parent will be `<root-branch>`. Proceed normally.
 - **Current branch already has a child in the stack:** The new branch is stacked on top of the current branch (at the current HEAD), not inserted between the current branch and its existing child. The existing child's parent is not modified.
 - **No changes to commit:** Ask the user whether to create an empty branch (branch + metadata only) or cancel. See step 6.
 - **Dirty index with conflicts:** If `git status` shows merge conflicts, stop and tell the user to resolve conflicts before creating a stack branch.

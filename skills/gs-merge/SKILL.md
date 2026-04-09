@@ -1,9 +1,9 @@
 ---
 name: gs-merge
-description: Use when the user wants to merge stacked PRs into main, land approved PRs from the stack, or runs /gs-merge.
+description: Use when the user wants to merge stacked PRs into the base branch, land approved PRs from the stack, or runs /gs-merge.
 ---
 
-You are implementing `/gs-merge`. This merges one or all PRs from a stacked PR chain into main with full cleanup.
+You are implementing `/gs-merge`. This merges one or all PRs from a stacked PR chain into the base branch with full cleanup.
 
 ## Steps
 
@@ -21,7 +21,7 @@ Show the discovered stack and ask for confirmation:
 
 ```
 Stack detected (N PRs):
-  1. stack/01-feature-a  (PR #42)  → base: main
+  1. stack/01-feature-a  (PR #42)  → base: <root-branch>
   2. stack/02-feature-b  (PR #43)  → base: stack/01-feature-a
   3. stack/03-feature-c  (PR #44)  → base: stack/02-feature-b
 
@@ -55,7 +55,7 @@ Ask the user to pick a strategy, recommending squash if available:
 ```
 Merge strategy?
   1. Squash (recommended) — combines all commits into one
-  2. Rebase — replays commits individually onto main
+  2. Rebase — replays commits individually onto the base branch
   3. Merge commit — creates a merge commit
 ```
 
@@ -134,22 +134,22 @@ gh pr merge <number> --squash    # or --rebase or --merge based on chosen strate
 
 This must happen before the merged branch is deleted, so GitHub can correctly update the diff.
 
-**If scope is "all":** Only the immediate next PR needs retargeting (its base becomes `main`), since the merge cycle will process it next:
+**If scope is "all":** Only the immediate next PR needs retargeting (its base becomes `<root-branch>`), since the merge cycle will process it next:
 
 ```bash
-gh pr edit <next-pr-number> --base main
+gh pr edit <next-pr-number> --base <root-branch>
 ```
 
 Update its stack metadata to reflect the new parent:
 ```bash
-git config git-stack.<next-branch>.parent main
+git config git-stack.<next-branch>.parent <root-branch>
 ```
 
-**If scope is "next" (merge only one PR):** The immediate next PR must be retargeted to `main`, AND its stack metadata must be updated. All further downstream branches keep their existing parent pointers (they still chain off each other correctly):
+**If scope is "next" (merge only one PR):** The immediate next PR must be retargeted to `<root-branch>`, AND its stack metadata must be updated. All further downstream branches keep their existing parent pointers (they still chain off each other correctly):
 
 ```bash
-gh pr edit <next-pr-number> --base main
-git config git-stack.<next-branch>.parent main
+gh pr edit <next-pr-number> --base <root-branch>
+git config git-stack.<next-branch>.parent <root-branch>
 ```
 
 After the full merge cycle completes for the single PR (including rebase in step 6g), report to the user:
@@ -173,13 +173,13 @@ The `git branch -D` is local cleanup — if the branch does not exist locally, i
 git fetch origin
 ```
 
-This updates `origin/main` to the post-merge state before rebasing.
+This updates `origin/<root-branch>` to the post-merge state before rebasing.
 
 #### 6g. Rebase remaining stack
 
-For each remaining branch in the stack, in order from the branch closest to `main` outward to the tip:
+For each remaining branch in the stack, in order from the branch closest to `<root-branch>` outward to the tip:
 
-- The **first remaining branch** rebases onto `origin/main`
+- The **first remaining branch** rebases onto `origin/<root-branch>`
 - Each **subsequent branch** rebases onto the locally-rebased branch below it (not its remote)
 
 For each branch:
@@ -231,7 +231,7 @@ Possible statuses per row:
 ## Rules
 
 - **Never** use `--delete-branch` during merge — branch must survive until the next PR is retargeted
-- **Always** retarget the next PR's base to `main` before deleting the merged branch
+- **Always** retarget the next PR's base to `<root-branch>` before deleting the merged branch
 - **Always** use `--force-with-lease` for all pushes, never bare `--force`
 - **Always** present the stack and get user confirmation before any merge
 - **Stop** on CI failure — do not skip and continue
